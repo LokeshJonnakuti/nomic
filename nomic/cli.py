@@ -54,7 +54,7 @@ def login(token, tenant='production'):
     if not nomic_base_path.exists():
         nomic_base_path.mkdir()
 
-    response = requests.get('https://' + environment['api_domain'] + f"/v1/user/token/refresh/{token}")
+    response = requests.get('https://' + environment['api_domain'] + f"/v1/user/token/refresh/{token}", timeout=60)
     response = validate_api_http_response(response)
 
     if not response.status_code == 200:
@@ -73,8 +73,8 @@ def refresh_bearer_token():
     if time.time() >= credentials['expires']:
         environment = tenants[credentials['tenant']]
         response = requests.get(
-            'https://' + environment['api_domain'] + f"/v1/user/token/refresh/{credentials['refresh_token']}"
-        )
+            'https://' + environment['api_domain'] + f"/v1/user/token/refresh/{credentials['refresh_token']}", 
+        timeout=60)
         response = validate_api_http_response(response)
 
         if not response.status_code == 200:
