@@ -1,36 +1,28 @@
 import base64
-import concurrent
 import concurrent.futures
 import io
 import json
 import os
-import pickle
 import time
-import uuid
-from collections import defaultdict
 from contextlib import contextmanager
-from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import pandas as pd
 import pyarrow as pa
 import requests
 from loguru import logger
 from pandas import DataFrame
 from pyarrow import compute as pc
 from pyarrow import feather, ipc
-from pydantic import BaseModel, Field
 from tqdm import tqdm
-
-import nomic
 
 from .cli import refresh_bearer_token, validate_api_http_response
 from .data_inference import convert_pyarrow_schema_for_atlas
 from .data_operations import  AtlasMapData, AtlasMapDuplicates, AtlasMapEmbeddings, AtlasMapTags, AtlasMapTopics 
 from .settings import *
-from .utils import assert_valid_project_id, get_object_size_in_bytes
+from .utils import assert_valid_project_id
+from security import safe_requests
 
 
 class AtlasUser:
@@ -73,8 +65,7 @@ class AtlasClass(object):
         self.header = {"Authorization": f"Bearer {token}"}
 
         if self.token:
-            response = requests.get(
-                self.atlas_api_path + "/v1/user",
+            response = safe_requests.get(self.atlas_api_path + "/v1/user",
                 headers=self.header,
             )
             response = validate_api_http_response(response)
@@ -95,8 +86,7 @@ class AtlasClass(object):
         if self.atlas_api_path.startswith('https://api-atlas.nomic.ai'):
             api_base_path = "https://no-cdn-api-atlas.nomic.ai"
 
-        response = requests.get(
-            api_base_path + "/v1/user",
+        response = safe_requests.get(api_base_path + "/v1/user",
             headers=self.header,
         )
         response = validate_api_http_response(response)
@@ -150,8 +140,7 @@ class AtlasClass(object):
 
         assert_valid_project_id(project_id)
 
-        response = requests.get(
-            self.atlas_api_path + f"/v1/project/{project_id}",
+        response = safe_requests.get(self.atlas_api_path + f"/v1/project/{project_id}",
             headers=self.header,
         )
 
@@ -170,8 +159,7 @@ class AtlasClass(object):
             Job ID meta-data.
         '''
 
-        response = requests.get(
-            self.atlas_api_path + f"/v1/project/index/job/{job_id}",
+        response = safe_requests.get(self.atlas_api_path + f"/v1/project/index/job/{job_id}",
             headers=self.header,
         )
 
@@ -302,8 +290,7 @@ class AtlasClass(object):
                 raise NotImplementedError("Getting organization by a specific ID is not yet implemented.")
 
         else:
-            organization_id_request = requests.get(
-                self.atlas_api_path + f"/v1/organization/search/{organization_name}", headers=self.header
+            organization_id_request = safe_requests.get(self.atlas_api_path + f"/v1/organization/search/{organization_name}", headers=self.header
             )
             if organization_id_request.status_code != 200:
                 user = self._get_current_user()
@@ -403,8 +390,7 @@ class AtlasProjection:
 
     @property
     def _status(self):
-        response = requests.get(
-            self.project.atlas_api_path + f"/v1/project/index/job/progress/{self.atlas_index_id}",
+        response = safe_requests.get(self.project.atlas_api_path + f"/v1/project/index/job/progress/{self.atlas_index_id}",
             headers=self.project.header,
         )
         if response.status_code != 200:
@@ -602,7 +588,7 @@ class AtlasProjection:
             all_quads.append(quad)
             path = self.tile_destination / quad
             if not path.exists() or overwrite:
-                data = requests.get(root + quad)
+                data = safe_requests.get(root + quad)
                 readable = io.BytesIO(data.content)
                 readable.seek(0)
                 tb = feather.read_table(readable, memory_map=True)
@@ -1111,8 +1097,7 @@ class AtlasProject(AtlasClass):
 
         job_id = response.json()['job_id']
 
-        job = requests.get(
-            self.atlas_api_path + f"/v1/project/index/job/{job_id}",
+        job = safe_requests.get(self.atlas_api_path + f"/v1/project/index/job/{job_id}",
             headers=self.header,
         ).json()
 
