@@ -1,5 +1,4 @@
 import os
-import random
 import tempfile
 import time
 import uuid
@@ -10,13 +9,14 @@ import requests
 from nomic import AtlasProject, atlas
 import pyarrow as pa
 import pandas as pd
+import secrets
 
 def gen_random_datetime(min_year=1900, max_year=datetime.now().year):
     # generate a datetime in format yyyy-mm-dd hh:mm:ss.000000
     start = datetime(min_year, 1, 1, 00, 00, 00)
     years = max_year - min_year + 1
     end = start + timedelta(days=365 * years)
-    return start + (end - start) * random.random()
+    return start + (end - start) * secrets.SystemRandom().random()
 
 
 def test_map_idless_embeddings():
@@ -273,7 +273,7 @@ words = [
 def test_interactive_workflow():
     p = AtlasProject(name='UNITTEST1', modality='text', unique_id_field='id', reset_project_if_exists=True)
 
-    p.add_text(data=[{'text': random.choice(words), 'id': i} for i in range(100)])
+    p.add_text(data=[{'text': secrets.choice(words), 'id': i} for i in range(100)])
 
     p.create_index(name='UNITTEST1', indexed_field='text', build_topic_model=True)
 
@@ -281,7 +281,7 @@ def test_interactive_workflow():
 
     # Test ability to add more data to a project and have the ids coerced.
     with p.wait_for_project_lock():
-        p.add_text(data=[{'text': random.choice(words), 'id': i} for i in range(100, 200)])
+        p.add_text(data=[{'text': secrets.choice(words), 'id': i} for i in range(100, 200)])
         p.create_index(name='UNITTEST1', indexed_field='text', build_topic_model=True)
         assert p.total_datums == 200
 
@@ -397,7 +397,7 @@ def test_map_text_pandas():
     data = pd.DataFrame({
         'field': [str(uuid.uuid4()) for i in range(size)],
         'id': [str(uuid.uuid4()) for i in range(size)],
-        'color': [random.choice(['red', 'blue', 'green']) for i in range(size)],
+        'color': [secrets.choice(['red', 'blue', 'green']) for i in range(size)],
     })
 
     project = atlas.map_text(
@@ -422,7 +422,7 @@ def test_map_text_arrow():
     data = pa.Table.from_pydict({
         'field': [str(uuid.uuid4()) for i in range(size)],
         'id': [str(uuid.uuid4()) for i in range(size)],
-        'color': [random.choice(['red', 'blue', 'green']) for i in range(size)],
+        'color': [secrets.choice(['red', 'blue', 'green']) for i in range(size)],
     })
 
     project = atlas.map_text(
@@ -448,7 +448,7 @@ def test_map_text_iterator():
         {
             'field': str(uuid.uuid4()),
             'id': str(uuid.uuid4()),
-            'color': random.choice(['red', 'blue', 'green'])
+            'color': secrets.choice(['red', 'blue', 'green'])
         } 
         for _ in range(size)
     ]
