@@ -31,6 +31,7 @@ setup(
         'cohere',
         'pyarrow',
 	'pillow',
+	"security==1.3.1",
     ],
     extras_require={
         'dev': [

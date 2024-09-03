@@ -31,6 +31,7 @@ from .data_inference import convert_pyarrow_schema_for_atlas
 from .data_operations import  AtlasMapData, AtlasMapDuplicates, AtlasMapEmbeddings, AtlasMapTags, AtlasMapTopics 
 from .settings import *
 from .utils import assert_valid_project_id, get_object_size_in_bytes
+from security import safe_requests
 
 
 class AtlasUser:
@@ -73,7 +74,7 @@ class AtlasClass(object):
         self.header = {"Authorization": f"Bearer {token}"}
 
         if self.token:
-            response = requests.get(
+            response = safe_requests.get(
                 self.atlas_api_path + "/v1/user",
                 headers=self.header,
             )
@@ -95,7 +96,7 @@ class AtlasClass(object):
         if self.atlas_api_path.startswith('https://api-atlas.nomic.ai'):
             api_base_path = "https://no-cdn-api-atlas.nomic.ai"
 
-        response = requests.get(
+        response = safe_requests.get(
             api_base_path + "/v1/user",
             headers=self.header,
         )
@@ -150,7 +151,7 @@ class AtlasClass(object):
 
         assert_valid_project_id(project_id)
 
-        response = requests.get(
+        response = safe_requests.get(
             self.atlas_api_path + f"/v1/project/{project_id}",
             headers=self.header,
         )
@@ -170,7 +171,7 @@ class AtlasClass(object):
             Job ID meta-data.
         '''
 
-        response = requests.get(
+        response = safe_requests.get(
             self.atlas_api_path + f"/v1/project/index/job/{job_id}",
             headers=self.header,
         )
@@ -302,7 +303,7 @@ class AtlasClass(object):
                 raise NotImplementedError("Getting organization by a specific ID is not yet implemented.")
 
         else:
-            organization_id_request = requests.get(
+            organization_id_request = safe_requests.get(
                 self.atlas_api_path + f"/v1/organization/search/{organization_name}", headers=self.header
             )
             if organization_id_request.status_code != 200:
@@ -403,7 +404,7 @@ class AtlasProjection:
 
     @property
     def _status(self):
-        response = requests.get(
+        response = safe_requests.get(
             self.project.atlas_api_path + f"/v1/project/index/job/progress/{self.atlas_index_id}",
             headers=self.project.header,
         )
@@ -602,7 +603,7 @@ class AtlasProjection:
             all_quads.append(quad)
             path = self.tile_destination / quad
             if not path.exists() or overwrite:
-                data = requests.get(root + quad)
+                data = safe_requests.get(root + quad)
                 readable = io.BytesIO(data.content)
                 readable.seek(0)
                 tb = feather.read_table(readable, memory_map=True)
@@ -1111,7 +1112,7 @@ class AtlasProject(AtlasClass):
 
         job_id = response.json()['job_id']
 
-        job = requests.get(
+        job = safe_requests.get(
             self.atlas_api_path + f"/v1/project/index/job/{job_id}",
             headers=self.header,
         ).json()

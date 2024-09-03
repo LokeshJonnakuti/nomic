@@ -4,8 +4,8 @@ import time
 from pathlib import Path
 
 import click
-import requests
 from rich.console import Console
+from security import safe_requests
 
 tenants = {
     'staging': {'frontend_domain': 'staging-atlas.nomic.ai', 'api_domain': 'staging-api-atlas.nomic.ai'},
@@ -54,7 +54,7 @@ def login(token, tenant='production'):
     if not nomic_base_path.exists():
         nomic_base_path.mkdir()
 
-    response = requests.get('https://' + environment['api_domain'] + f"/v1/user/token/refresh/{token}")
+    response = safe_requests.get('https://' + environment['api_domain'] + f"/v1/user/token/refresh/{token}")
     response = validate_api_http_response(response)
 
     if not response.status_code == 200:
@@ -72,7 +72,7 @@ def refresh_bearer_token():
     credentials = get_api_credentials()
     if time.time() >= credentials['expires']:
         environment = tenants[credentials['tenant']]
-        response = requests.get(
+        response = safe_requests.get(
             'https://' + environment['api_domain'] + f"/v1/user/token/refresh/{credentials['refresh_token']}"
         )
         response = validate_api_http_response(response)
