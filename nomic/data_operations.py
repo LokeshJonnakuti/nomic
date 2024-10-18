@@ -207,7 +207,7 @@ class AtlasMapTopics:
                 self.projection.project.meta['id'], self.projection.projection_id
             ),
             headers=self.projection.project.header,
-        )
+        timeout=60)
         topics = json.loads(response.text)['topic_models'][0]['features']
         topic_data = [e['properties'] for e in topics]
         topic_data = pd.DataFrame(topic_data)
@@ -363,7 +363,7 @@ class AtlasMapTopics:
                 'k': k,
                 'depth': depth,
             },
-        )
+        timeout=60)
         if response.status_code != 200:
             raise Exception(response.text)
 
@@ -509,7 +509,7 @@ class AtlasMapEmbeddings:
                     "last_file": last,
                     "page_size": limit
                 }
-                r = requests.post(route, headers=self.projection.project.header, json=params)
+                r = requests.post(route, headers=self.projection.project.header, json=params, timeout=60)
                 if r.status_code == 204:
                     # Download complete!
                     break
@@ -577,13 +577,13 @@ class AtlasMapEmbeddings:
                     'queries': base64.b64encode(bytesio.getvalue()).decode('utf-8'),
                     'k': k,
                 },
-            )
+            timeout=60)
         else:
             response = requests.post(
                 self.projection.project.atlas_api_path + "/v1/project/data/get/nearest_neighbors/by_id",
                 headers=self.projection.project.header,
                 json={'atlas_index_id': self.projection.atlas_index_id, 'datum_ids': ids, 'k': k},
-            )
+            timeout=60)
 
         if response.status_code == 500:
             raise Exception('Cannot perform vector search on your map at this time. Try again later.')
@@ -618,7 +618,7 @@ class AtlasMapEmbeddings:
                 self.atlas_api_path
                 + f"/v1/project/data/get/embedding/{self.project.id}/{self.projection.atlas_index_id}/{offset}/{limit}",
                 headers=self.header,
-            )
+            timeout=60)
             if response.status_code != 200:
                 raise Exception(response.text)
 
@@ -657,7 +657,7 @@ class AtlasMapEmbeddings:
                 self.project.atlas_api_path
                 + f"/v1/project/data/get/embedding/{self.project.id}/{self.projection.atlas_index_id}/{offset}/{limit}",
                 headers=self.project.header,
-            )
+            timeout=60)
 
             if response.status_code != 200:
                 raise Exception(response.text)
@@ -790,7 +790,7 @@ class AtlasMapTags:
             json={
                 'project_id': self.project.id,
             },
-        ).json()['results']
+        timeout=60).json()['results']
 
         label_to_datums = {}
         for item in datums_and_tags:
@@ -829,7 +829,7 @@ class AtlasMapTags:
 
         headers = self.project.header.copy()
         headers['Content-Type'] = 'application/octet-stream'
-        response = requests.post(self.project.atlas_api_path + "/v1/project/tag/add", headers=headers, data=payload)
+        response = requests.post(self.project.atlas_api_path + "/v1/project/tag/add", headers=headers, data=payload, timeout=60)
         if response.status_code != 200:
             raise Exception("Failed to add tags")
 
@@ -867,7 +867,7 @@ class AtlasMapTags:
 
         headers = self.project.header.copy()
         headers['Content-Type'] = 'application/octet-stream'
-        response = requests.post(self.project.atlas_api_path + "/v1/project/tag/delete", headers=headers, data=payload)
+        response = requests.post(self.project.atlas_api_path + "/v1/project/tag/delete", headers=headers, data=payload, timeout=60)
         if response.status_code != 200:
             raise Exception("Failed to delete tags")
 
@@ -984,7 +984,7 @@ class AtlasMapData:
     
     def _download_file(self, url: str, path: str):
         path.parent.mkdir(parents=True, exist_ok=True)
-        with requests.get(url, stream=True) as response:
+        with requests.get(url, stream=True, timeout=60) as response:
             response.raise_for_status()
             with open(path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):

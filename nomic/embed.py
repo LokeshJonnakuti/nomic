@@ -29,7 +29,7 @@ def text(texts: List[str], model: str = 'nomic-embed-text-v1'):
         atlas_class.atlas_api_path + "/v1/embedding/text",
         headers=atlas_class.header,
         json={'texts': texts, 'model': model},
-    )
+    timeout=60)
 
     if response.status_code == 200:
         return response.json()
@@ -55,8 +55,8 @@ def images(images: Union[str, PIL.Image.Image], model: str = 'nomic-embed-vision
             atlas_class.atlas_api_path + "/v1/embedding/image",
             headers=atlas_class.header,
             data={"model": "nomic-embed-vision-v1"},
-            files=batch
-        )
+            files=batch, 
+        timeout=60)
 
         if response.status_code == 200:
             return response.json()

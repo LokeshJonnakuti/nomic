@@ -76,7 +76,7 @@ class AtlasClass(object):
             response = requests.get(
                 self.atlas_api_path + "/v1/user",
                 headers=self.header,
-            )
+            timeout=60)
             response = validate_api_http_response(response)
             if not response.status_code == 200:
                 logger.warning(str(response))
@@ -98,7 +98,7 @@ class AtlasClass(object):
         response = requests.get(
             api_base_path + "/v1/user",
             headers=self.header,
-        )
+        timeout=60)
         response = validate_api_http_response(response)
         if not response.status_code == 200:
             raise ValueError("Your authorization token is no longer valid. Run `nomic login` to obtain a new one.")
@@ -136,7 +136,7 @@ class AtlasClass(object):
             self.atlas_api_path + "/v1/project/remove",
             headers=self.header,
             json={'project_id': project_id},
-        )
+        timeout=60)
 
     def _get_project_by_id(self, project_id: str):
         '''
@@ -153,7 +153,7 @@ class AtlasClass(object):
         response = requests.get(
             self.atlas_api_path + f"/v1/project/{project_id}",
             headers=self.header,
-        )
+        timeout=60)
 
         if response.status_code != 200:
             raise Exception(f"Could not access project with id {project_id}: {response.text}")
@@ -173,7 +173,7 @@ class AtlasClass(object):
         response = requests.get(
             self.atlas_api_path + f"/v1/project/index/job/{job_id}",
             headers=self.header,
-        )
+        timeout=60)
 
         if response.status_code != 200:
             raise Exception(f'Could not access job state: {response.text}')
@@ -303,8 +303,8 @@ class AtlasClass(object):
 
         else:
             organization_id_request = requests.get(
-                self.atlas_api_path + f"/v1/organization/search/{organization_name}", headers=self.header
-            )
+                self.atlas_api_path + f"/v1/organization/search/{organization_name}", headers=self.header, 
+            timeout=60)
             if organization_id_request.status_code != 200:
                 user = self._get_current_user()
                 users_organizations = [org['nickname'] for org in user['organizations']]
@@ -333,7 +333,7 @@ class AtlasClass(object):
             self.atlas_api_path + "/v1/project/search/name",
             headers=self.header,
             json={'organization_name': organization_name, 'project_name': project_name},
-        )
+        timeout=60)
 
         if response.status_code != 200:
             raise Exception(f"Failed to find project: {response.text}")
@@ -406,7 +406,7 @@ class AtlasProjection:
         response = requests.get(
             self.project.atlas_api_path + f"/v1/project/index/job/progress/{self.atlas_index_id}",
             headers=self.project.header,
-        )
+        timeout=60)
         if response.status_code != 200:
             raise Exception(response.text)
 
@@ -602,7 +602,7 @@ class AtlasProjection:
             all_quads.append(quad)
             path = self.tile_destination / quad
             if not path.exists() or overwrite:
-                data = requests.get(root + quad)
+                data = requests.get(root + quad, timeout=60)
                 readable = io.BytesIO(data.content)
                 readable.seek(0)
                 tb = feather.read_table(readable, memory_map=True)
@@ -649,7 +649,7 @@ class AtlasProjection:
             self.project.atlas_api_path + "/v1/project/atoms/get",
             headers=self.project.header,
             json={'project_id': self.project.id, 'index_id': self.atlas_index_id, 'atom_ids': ids},
-        )
+        timeout=60)
 
         if response.status_code == 200:
             return response.json()['atoms']
@@ -808,7 +808,7 @@ class AtlasProject(AtlasClass):
                 'modality': modality,
                 'is_public': is_public,
             },
-        )
+        timeout=60)
         if response.status_code != 201:
             raise Exception(f"Failed to create project: {response.json()}")
 
@@ -1103,7 +1103,7 @@ class AtlasProject(AtlasClass):
             self.atlas_api_path + "/v1/project/index/create",
             headers=self.header,
             json=build_template,
-        )
+        timeout=60)
         if response.status_code != 200:
             logger.info('Create project failed with code: {}'.format(response.status_code))
             logger.info('Additional info: {}'.format(response.text))
@@ -1114,7 +1114,7 @@ class AtlasProject(AtlasClass):
         job = requests.get(
             self.atlas_api_path + f"/v1/project/index/job/{job_id}",
             headers=self.header,
-        ).json()
+        timeout=60).json()
 
         index_id = job['index_id']
 
@@ -1188,7 +1188,7 @@ class AtlasProject(AtlasClass):
             self.atlas_api_path + "/v1/project/data/get",
             headers=self.header,
             json={'project_id': self.id, 'datum_ids': ids},
-        )
+        timeout=60)
 
         if response.status_code == 200:
             return [item for item in response.json()['datums']]
@@ -1213,7 +1213,7 @@ class AtlasProject(AtlasClass):
             self.atlas_api_path + "/v1/project/data/delete",
             headers=self.header,
             json={'project_id': self.id, 'datum_ids': ids},
-        )
+        timeout=60)
 
         if response.status_code == 200:
             return True
@@ -1347,7 +1347,7 @@ class AtlasProject(AtlasClass):
                     self.atlas_api_path + upload_endpoint,
                     headers=self.header,
                     data=buffer,
-                )
+                timeout=60)
                 return response
 
         # if this method is being called internally, we pass a global progress bar
@@ -1492,6 +1492,6 @@ class AtlasProject(AtlasClass):
             self.atlas_api_path + "/v1/project/update_indices",
             headers=self.header,
             json={'project_id': self.id, 'rebuild_topic_models': rebuild_topic_models},
-        )
+        timeout=60)
 
         logger.info(f"Updating maps in project `{self.name}`")
