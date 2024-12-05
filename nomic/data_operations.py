@@ -21,6 +21,7 @@ from pyarrow import ipc
 from tqdm import tqdm
 
 from .settings import EMBEDDING_PAGINATION_LIMIT
+from security import safe_requests
 
 
 class AtlasMapDuplicates:
@@ -201,7 +202,7 @@ class AtlasMapTopics:
         if self._metadata is not None:
             return self._metadata
 
-        response = requests.get(
+        response = safe_requests.get(
             self.projection.project.atlas_api_path
             + "/v1/project/{}/index/projection/{}".format(
                 self.projection.project.meta['id'], self.projection.projection_id
@@ -614,7 +615,7 @@ class AtlasMapEmbeddings:
         offset = 0
         limit = EMBEDDING_PAGINATION_LIMIT
         while True:
-            response = requests.get(
+            response = safe_requests.get(
                 self.atlas_api_path
                 + f"/v1/project/data/get/embedding/{self.project.id}/{self.projection.atlas_index_id}/{offset}/{limit}",
                 headers=self.header,
@@ -653,7 +654,7 @@ class AtlasMapEmbeddings:
         limit = EMBEDDING_PAGINATION_LIMIT
 
         def download_shard(offset, check_access=False):
-            response = requests.get(
+            response = safe_requests.get(
                 self.project.atlas_api_path
                 + f"/v1/project/data/get/embedding/{self.project.id}/{self.projection.atlas_index_id}/{offset}/{limit}",
                 headers=self.project.header,
@@ -984,7 +985,7 @@ class AtlasMapData:
     
     def _download_file(self, url: str, path: str):
         path.parent.mkdir(parents=True, exist_ok=True)
-        with requests.get(url, stream=True) as response:
+        with safe_requests.get(url, stream=True) as response:
             response.raise_for_status()
             with open(path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
